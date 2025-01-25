@@ -1,35 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import {GlobalStyles, ThemeProvider, useTheme} from "@mui/material"
+import ModalProvider from "mui-modal-provider"
+import {SnackbarProvider} from "notistack"
+import {BrowserRouter, useRoutes} from "react-router-dom"
+import "./App.css"
+import {mainRoutes} from "./Routes.tsx"
 
-function App() {
-  const [count, setCount] = useState(0)
+const Routes = () => {
+    return useRoutes([
+        mainRoutes
+    ])
+}
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+const App = () => {
+    const theme = useTheme()
+
+    return <>
+        <ThemeProvider theme={{...theme}}>
+            <SnackbarProvider maxSnack={5} preventDuplicate>
+                <GlobalStyles
+                    styles={{
+                        body: {
+                            backgroundColor: theme.palette.background.default,
+                            color: theme.palette.text.primary
+                        }
+                    }}/>
+                <BrowserRouter>
+                    <ModalProvider>
+                        <Routes/>
+                    </ModalProvider>
+                </BrowserRouter>
+            </SnackbarProvider>
+        </ThemeProvider>
     </>
-  )
 }
 
 export default App
