@@ -1,7 +1,7 @@
 import {Delete} from "@mui/icons-material"
 import {
     Checkbox,
-    Divider, IconButton,
+    IconButton,
     List,
     ListItem,
     ListItemIcon,
@@ -12,6 +12,7 @@ import {
 import {pipe} from "fp-ts/function"
 import * as A from "fp-ts/ReadonlyArray"
 import React, {ChangeEvent, useCallback, useEffect, useMemo, useState} from "react"
+import TitleBar from "../common/compoent/TitleBar.tsx"
 import {useHandleCallback} from "../common/Http.ts"
 import {useTodoService} from "../service/TodoService.ts"
 import {TodoItem} from "../state/Todo.ts"
@@ -57,8 +58,12 @@ const TodoSpace = () => {
 
         event.preventDefault()
 
+        const content = text.trim()
+
+        if (content == "") return
+
         pipe(
-            service.register(text),
+            service.register(content),
             handleResponse(() => {
                 setText("")
                 setLoaded(false)
@@ -92,8 +97,10 @@ const TodoSpace = () => {
     }, [appendItems, loaded])
 
     return <>
-        <Stack id={"todo-space"}>
-            <Stack>
+        <TitleBar title={"Todo"}/>
+        <Stack id={"todo-space"} height={"inherit"} pt={"64px"} direction={"row"}>
+            <Stack flexGrow={1} pt={"10px"}>
+                <Typography variant={"h3"}>할 일 목록</Typography>
                 <ListItem>
                     <TextField fullWidth
                                variant={"outlined"}
@@ -109,7 +116,7 @@ const TodoSpace = () => {
                             <ListItem key={item.id}
                                       secondaryAction={
                                           <IconButton edge="end" onClick={() => onDelete(item.id)}>
-                                              <Delete />
+                                              <Delete/>
                                           </IconButton>
                                       }>
                                 <ListItemIcon>
@@ -125,13 +132,19 @@ const TodoSpace = () => {
                     </List>
                 }
             </Stack>
-            <Divider/>
-            <Stack>
+
+            <Stack flexGrow={1} pt={"10px"}>
+                <Typography variant={"h3"}>완료한 일 목록</Typography>
                 {A.isEmpty(doneItems) ?
-                    <Typography variant={"h2"}>아직 일을 끝내지 못했나요?</Typography> :
+                    <Typography variant={"h4"}>아직 일을 끝내지 못했나요?</Typography> :
                     <List>
                         {doneItems.map((item) => (
-                            <ListItem key={item.id}>
+                            <ListItem key={item.id}
+                                      secondaryAction={
+                                          <IconButton edge="end" onClick={() => onDelete(item.id)}>
+                                              <Delete/>
+                                          </IconButton>
+                                      }>
                                 <ListItemIcon>
                                     <Checkbox checked={item.completed}
                                               onChange={(e) => onChangeStatus(e, item.id)}/>
