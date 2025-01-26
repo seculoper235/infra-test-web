@@ -23,8 +23,9 @@ export type HttpError = T.TypeOf<typeof HttpError>
 export type ServiceError = HttpError | Error
 
 export function getEndPoint() {
+    const env = import.meta.env
 
-    return "http://localhost:8080/"
+    return env.VITE_API_HOST
 }
 
 const handleResponse: (te: TaskEither<ServiceError, Response>) => TaskEither<ServiceError, Response> = flow(
