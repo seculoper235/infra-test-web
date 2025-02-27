@@ -3,6 +3,7 @@ import ModalProvider from "mui-modal-provider"
 import {SnackbarProvider} from "notistack"
 import {BrowserRouter, useRoutes} from "react-router-dom"
 import "./App.css"
+import "./Fonts.css"
 import {mainRoutes} from "./Routes.tsx"
 
 const Routes = () => {
