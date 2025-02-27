@@ -14,8 +14,8 @@ import * as A from "fp-ts/ReadonlyArray"
 import React, {ChangeEvent, useCallback, useEffect, useMemo, useState} from "react"
 import TitleBar from "../common/compoent/TitleBar.tsx"
 import {useHandleCallback} from "../common/Http.ts"
-import {useTodoService} from "../service/TodoService.ts"
-import {TodoItem} from "../state/Todo.ts"
+import {useTodoService} from "./service/TodoService.ts"
+import {TodoItem} from "./state/Todo.ts"
 
 const TodoSpace = () => {
     const [items, setItems] = useState<ReadonlyArray<TodoItem>>(A.empty)
