@@ -1,4 +1,5 @@
 import {Checklist} from "@mui/icons-material"
+import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import {
     Box,
     Divider,
@@ -56,6 +57,7 @@ export const Layout = () => {
                 <Divider/>
                 <List>
                     <DrawerMenu label={"할 일"} route={"todo"} icon={<Checklist/>}/>
+                    <DrawerMenu label={"포스트"} route={"post"} icon={<AutoStoriesIcon/>}/>
                 </List>
                 <Divider/>
             </Drawer>
@@ -64,7 +66,7 @@ export const Layout = () => {
         {/*메인*/}
         <Stack className={"space-content"} alignItems={"stretch"} justifyContent={"center"}
                pl={`${drawerWidth}px`}
-               height={"100vh"}>
+               height={"100%"}>
             {outlet}
         </Stack>
     </>

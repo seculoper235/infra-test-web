@@ -9,11 +9,15 @@ const TitleBar = ({title}: AppBarProps) => {
         <CssBaseline/>
         <AppBar
             position="fixed"
-            sx={{width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`}}
+            sx={{
+                width: `calc(100% - ${drawerWidth}px)`,
+                ml: `${drawerWidth}px`, px: "10px",
+                backgroundColor: "#3097f4"
+            }}
         >
             <Toolbar>
                 <Typography variant="h6" noWrap component="div">
-                    {title} Space
+                    {title}
                 </Typography>
             </Toolbar>
         </AppBar>

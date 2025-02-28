@@ -97,7 +97,7 @@ const TodoSpace = () => {
     }, [appendItems, loaded])
 
     return <>
-        <TitleBar title={"Todo"}/>
+        <TitleBar title={"투두 리스트"}/>
         <Stack id={"todo-space"} height={"inherit"} pt={"64px"} direction={"row"}>
             <Stack flexGrow={1} pt={"10px"}>
                 <Typography variant={"h3"}>할 일 목록</Typography>
