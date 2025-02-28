@@ -1,12 +1,12 @@
 import {GlobalStyles, ThemeProvider} from "@mui/material"
 import ModalProvider from "mui-modal-provider"
 import {SnackbarProvider} from "notistack"
-import {BrowserRouter, useRoutes} from "react-router-dom"
-import "./App.css"
-import "./Fonts.css"
 import {useRecoilValue} from "recoil"
 import {themeState} from "./common/theme/Theme.ts"
 import {mainRoutes} from "./Routes.tsx"
+import {BrowserRouter, useRoutes} from "react-router-dom"
+import "./App.css"
+import "./Fonts.css"
 
 const Routes = () => {
     return useRoutes([

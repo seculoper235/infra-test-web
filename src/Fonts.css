@@ -4,3 +4,59 @@
     font-weight: normal;
     font-style: normal;
 }
+
+/*https://noonnu.cc/font_page/1226*/
+@font-face {
+    font-family: 'iceJaram-Rg';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-2@1.0/iceJaram-Rg.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*https://noonnu.cc/font_page/343*/
+@font-face {
+    font-family: 'Cafe24Shiningstar';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.1/Cafe24Shiningstar.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*https://noonnu.cc/font_page/74*/
+@font-face {
+    font-family: 'Makgeolli';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/Makgeolli.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*https://noonnu.cc/font_page/860*/
+@font-face {
+    font-family: 'KCCImkwontaek';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2202@1.0/KCCImkwontaek.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*https://noonnu.cc/font_page/1375*/
+@font-face {
+    font-family: 'KyoboHandwriting2023wsa';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2404-2@1.0/KyoboHandwriting2023wsa.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*https://noonnu.cc/font_page/887*/
+@font-face {
+    font-family: 'Donoun-Medium';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2205@1.0/Donoun-Medium.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*https://noonnu.cc/font_page/1382*/
+@font-face {
+    font-family: 'JeonHwaseon';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/JeonHwaseon.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
