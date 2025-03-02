@@ -19,6 +19,7 @@ import {useNavigate} from "react-router-dom"
 import Reference from "../../public/asset/image/reference.jpg"
 import TitleBar from "../common/compoent/TitleBar.tsx"
 import {useHandleCallback} from "../common/Http.ts"
+import ButtonBadge from "./Badge.tsx"
 import {usePostService} from "./service/PostService.ts"
 import {Post} from "./state/Post.ts"
 
@@ -159,25 +160,10 @@ const PostSpace = () => {
                                             </CardContent>
                                         </CardActionArea>
                                     )}
-                                    <CardActions style={{justifyContent: "flex-end"}}>
+                                    <CardActions>
                                         {!busy && <>
-                                          <Button variant={"text"} size="small">
-                                            <Typography sx={{
-                                                color: "text.secondary",
-                                                fontSize: 12
-                                            }}>
-                                              2025년 2월 28일
-                                            </Typography>
-                                          </Button>
-                                          <Box flexGrow={1}/>
-                                          <Button variant={"text"} size="small">
-                                            <Typography style={{
-                                                fontFamily: "KyoboHandwriting2023wsa",
-                                                fontSize: 14
-                                            }}>
-                                              by 핑핑
-                                            </Typography>
-                                          </Button>
+                                          <ButtonBadge label={"핑핑"}/>
+                                          <ButtonBadge label={"모히또"}/>
                                         </>}
                                     </CardActions>
                                 </Card>
