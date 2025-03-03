@@ -1,8 +1,12 @@
-import {GlobalStyles, ThemeProvider, useTheme} from "@mui/material"
-import ModalProvider from "mui-modal-provider"
+import {GlobalStyles, ThemeProvider} from "@mui/material"
+import {LocalizationProvider} from "@mui/x-date-pickers"
+import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs"
 import {SnackbarProvider} from "notistack"
 import {BrowserRouter, useRoutes} from "react-router-dom"
 import "./App.css"
+import "./Fonts.css"
+import {useRecoilValue} from "recoil"
+import {themeState} from "./common/theme/Theme.ts"
 import {mainRoutes} from "./Routes.tsx"
 
 const Routes = () => {
@@ -12,7 +16,7 @@ const Routes = () => {
 }
 
 const App = () => {
-    const theme = useTheme()
+    const theme = useRecoilValue(themeState)
 
     return <>
         <ThemeProvider theme={{...theme}}>
@@ -25,9 +29,9 @@ const App = () => {
                         }
                     }}/>
                 <BrowserRouter>
-                    <ModalProvider>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Routes/>
-                    </ModalProvider>
+                    </LocalizationProvider>
                 </BrowserRouter>
             </SnackbarProvider>
         </ThemeProvider>

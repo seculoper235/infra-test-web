@@ -2,7 +2,7 @@ import {pipe} from "fp-ts/function"
 import {TaskEither} from "fp-ts/TaskEither"
 import * as T from "io-ts"
 import {useMemo} from "react"
-import {RestClient, ServiceError} from "../common/Http.ts"
+import {RestClient, ServiceError} from "../../common/Http.ts"
 import {TodoItem} from "../state/Todo.ts"
 
 export const AuthenticationError = T.literal("AuthenticationError")
@@ -36,7 +36,7 @@ export class TodoService extends RestClient {
         }
 
         return pipe(
-            this.httpPut("api/todo/" +id+ "/status", JSON.stringify(param), TodoItem)
+            this.httpPut("api/todo/" + id + "/status", JSON.stringify(param), TodoItem)
         )
     }
 
@@ -45,7 +45,7 @@ export class TodoService extends RestClient {
     ): TaskEither<ServiceError, void> {
 
         return pipe(
-            this.httpDelete("api/todo/" +id)
+            this.httpDelete("api/todo/" + id)
         )
     }
 }

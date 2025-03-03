@@ -14,8 +14,8 @@ import * as A from "fp-ts/ReadonlyArray"
 import React, {ChangeEvent, useCallback, useEffect, useMemo, useState} from "react"
 import TitleBar from "../common/compoent/TitleBar.tsx"
 import {useHandleCallback} from "../common/Http.ts"
-import {useTodoService} from "../service/TodoService.ts"
-import {TodoItem} from "../state/Todo.ts"
+import {useTodoService} from "./service/TodoService.ts"
+import {TodoItem} from "./state/Todo.ts"
 
 const TodoSpace = () => {
     const [items, setItems] = useState<ReadonlyArray<TodoItem>>(A.empty)
@@ -97,7 +97,7 @@ const TodoSpace = () => {
     }, [appendItems, loaded])
 
     return <>
-        <TitleBar title={"Todo"}/>
+        <TitleBar title={"투두 리스트"}/>
         <Stack id={"todo-space"} height={"inherit"} pt={"64px"} direction={"row"}>
             <Stack flexGrow={1} pt={"10px"}>
                 <Typography variant={"h3"}>할 일 목록</Typography>
