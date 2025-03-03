@@ -66,7 +66,7 @@ export const Layout = () => {
         {/*메인*/}
         <Stack className={"space-content"} alignItems={"stretch"} justifyContent={"center"}
                pl={`${drawerWidth}px`}
-               height={"100%"}>
+               height={"inherit"}>
             {outlet}
         </Stack>
     </>
