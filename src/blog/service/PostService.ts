@@ -12,8 +12,14 @@ export type AuthenticationError = T.TypeOf<typeof AuthenticationError>
 
 export class PostService extends RestClient {
 
-    find(): TaskEither<ServiceError, ReadonlyArray<Post>> {
-        return this.httpGet("api/post", T.readonlyArray(Post))
+    find(
+        created: string
+    ): TaskEither<ServiceError, ReadonlyArray<Post>> {
+        const params = {
+            "created": created
+        }
+
+        return this.httpGet("api/post", T.readonlyArray(Post), params)
     }
 
     findById(

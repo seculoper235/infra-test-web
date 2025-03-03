@@ -1,5 +1,6 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import {Box, Button, Skeleton, Stack, Typography} from "@mui/material"
+import dayjs from "dayjs"
 import {pipe} from "fp-ts/function"
 import {useCallback, useEffect, useRef, useState} from "react"
 import {useNavigate, useParams} from "react-router-dom"
@@ -49,7 +50,8 @@ const PostPage = () => {
         const item = {
             id: 1,
             content: "<p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p>",
-            title: "오늘의 하루는 어땠나요...?"
+            title: "오늘의 하루는 어땠나요...?",
+            created: new Date()
         }
 
         setPost(item)
@@ -120,7 +122,7 @@ const PostPage = () => {
               </Typography>
             </Button>
           </Stack>
-          <Stack className={"post-contents"} alignItems={"center"} marginY={"40px"}>
+          <Stack className={"post-contents"} alignItems={"center"}>
             <Stack maxWidth={"820px"}>
               <Stack className={"post-header"}>
                   {busy ? (
@@ -151,7 +153,7 @@ const PostPage = () => {
                           px: "10px",
                           textAlign: "right"
                       }}>
-                          2025년 2월 28일
+                          {dayjs(post.created).format("YYYY년 MM월 DD일")}
                       </Typography>
                       <Box flexGrow={1}/>
                       <Typography sx={{
