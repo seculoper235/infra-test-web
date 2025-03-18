@@ -12,7 +12,7 @@ export type AuthenticationError = T.TypeOf<typeof AuthenticationError>
 export class TodoService extends RestClient {
 
     find(): TaskEither<ServiceError, ReadonlyArray<TodoItem>> {
-        return this.httpGet("api/todo", T.readonlyArray(TodoItem))
+        return this.httpGet("post", "api/todo", T.readonlyArray(TodoItem))
     }
 
     register(
@@ -23,7 +23,7 @@ export class TodoService extends RestClient {
         }
 
         return pipe(
-            this.httpPostNoReturn("api/todo", JSON.stringify(param))
+            this.httpPostNoReturn("post", "api/todo", JSON.stringify(param))
         )
     }
 
@@ -36,7 +36,7 @@ export class TodoService extends RestClient {
         }
 
         return pipe(
-            this.httpPut("api/todo/" + id + "/status", JSON.stringify(param), TodoItem)
+            this.httpPut("post", "api/todo/" + id + "/status", JSON.stringify(param), TodoItem)
         )
     }
 
@@ -45,7 +45,7 @@ export class TodoService extends RestClient {
     ): TaskEither<ServiceError, void> {
 
         return pipe(
-            this.httpDelete("api/todo/" + id)
+            this.httpDelete("post", "api/todo/" + id)
         )
     }
 }
