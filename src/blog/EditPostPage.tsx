@@ -3,6 +3,7 @@ import {pipe} from "fp-ts/function"
 import * as O from "fp-ts/Option"
 import {none} from "fp-ts/Option"
 import * as A from "fp-ts/ReadonlyArray"
+import {UUID} from "io-ts-types"
 import * as Parchment from "parchment"
 import Op from "quill-delta/src/Op.ts"
 import {CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef, useState} from "react"
@@ -12,7 +13,8 @@ import "react-quill-new/dist/quill.snow.css"
 import {useNavigate, useSearchParams} from "react-router-dom"
 import {useSetRecoilState} from "recoil"
 import {useHandleCallback} from "../common/Http.ts"
-import {getImageUrl} from "../common/state/File.ts"
+import {useFileService} from "../common/service/FileService.ts"
+import {FileData, FileReference, getImageUrl} from "../common/state/File.ts"
 import {globalLoadingState} from "../common/state/Loading.ts"
 import {usePostService} from "./service/PostService.ts"
 import {DefaultPost, Post} from "./state/Post.ts"
@@ -58,7 +60,7 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
                     image: handleImage
                 },
                 ImageResize: {
-                    modules: ["Resize"]
+                    modules: ["Resize", "DisplaySize"]
                 }
             }
         }), [handleImage])
@@ -78,9 +80,12 @@ const EditPostPage = () => {
 
     const setBusy = useSetRecoilState(globalLoadingState)
     const [post, setPost] = useState<Post>()
+    const [images, setImages] = useState<ReadonlyArray<FileReference>>(A.empty)
+    const id = useMemo(() => searchParams.get("id"), [searchParams])
     const hasLoaded = useRef(false)
 
-    const service = usePostService()
+    const postService = usePostService()
+    const fileService = useFileService()
     const handleResponse = useHandleCallback()
 
     const {
@@ -94,35 +99,34 @@ const EditPostPage = () => {
     })
 
     const isValid = useMemo(() =>
-            !errors.title && !errors.content
-        , [errors.title, errors.content])
+            !errors.title && !errors.contents
+        , [errors.title, errors.contents])
 
     // 초기 로딩 시
     const append = useCallback(() => {
-        const id = searchParams.get("id")
+        const uuid = pipe(
+            O.fromNullable(id),
+            O.map(i => pipe(
+                UUID.decode(i),
+                O.fromEither,
+                O.toUndefined
+            )),
+            O.toUndefined
+        )
 
-        if (!id) return
+        if (!uuid) return
 
         setBusy(true)
 
         const request = pipe(
-            service.findById(Number(id)),
+            postService.findById(uuid),
             handleResponse<Post>((res) => {
                 setPost(res)
             })
         )
 
         request().finally(() => setBusy(false))
-
-        const item = {
-            id: 1,
-            content: "<p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p>",
-            title: "오늘의 하루는 어땠나요...?",
-            created: new Date()
-        }
-
-        setPost(item)
-    }, [handleResponse, searchParams, service, setBusy])
+    }, [id, setBusy, postService, handleResponse])
 
     useEffect(() => {
         if (!hasLoaded.current) {
@@ -150,20 +154,18 @@ const EditPostPage = () => {
             const range = editor.getSelection(true)
 
             pipe(
-                service.upload(file),
+                fileService.upload("post/image", file as FileData),
                 handleResponse((res) => {
-                    console.log("이미지 업로드 완료: ", getImageUrl(res))
-                    editor.insertEmbed(range.index, "image", defaultUrl)
-                    editor.setSelection(range.index + 1)
+                    console.log("이미지 업로드 완료: ", res.id)
+
+                    setImages(images => [...images, res])
+                    editor.insertEmbed(range.index, "image", getImageUrl(res))
+                    editor.insertText(range.index + 1, "/n")
+                    editor.setSelection(range.index + 2)
                 })
             )()
-
-            const defaultUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1c9zAnn02wcDmYlMABoRgWoxn4wccXzUpUg&s"
-            editor.insertEmbed(range.index, "image", defaultUrl)
-            editor.insertText(range.index + 1, "/n")
-            editor.setSelection(range.index + 2)
         })
-    }, [handleResponse, service])
+    }, [handleResponse, fileService])
 
     const onSubmit = useCallback((item: Post) => {
         if (!quillRef.current) return
@@ -172,7 +174,8 @@ const EditPostPage = () => {
 
         const editor = quillRef.current.getEditor()
 
-        console.log("포스트 저장되었습니다: ", item)
+        const summary = editor.getText(0, 100)
+
         const files = pipe(
             editor.getContents().ops,
             A.filterMap<Op, string>(a => {
@@ -180,10 +183,18 @@ const EditPostPage = () => {
             })
         )
 
+        const uploads = pipe(
+            images,
+            A.filter(image => files.includes(image.path)),
+            A.map(upload => upload.id)
+        )
+
+        console.log("포스트 저장할 내용: ", item)
         console.log("현재 파일 목록: ", files)
 
         const request = pipe(
-            service.register(item, files),
+            !id ? postService.register(item, summary, uploads)
+                : postService.update(item, summary, uploads),
             handleResponse((res) => {
                 console.log("포스트 저장되었습니다: ", res)
                 navigate("post/" + res.id)
@@ -191,7 +202,7 @@ const EditPostPage = () => {
         )
 
         request().finally(() => setBusy(false))
-    }, [handleResponse, navigate, service, setBusy])
+    }, [handleResponse, id, images, navigate, postService, setBusy])
 
     const onChange = useCallback((onChange: (input: string) => void, value: string, editor: UnprivilegedEditor) => {
         console.log(editor.getText())
@@ -205,7 +216,8 @@ const EditPostPage = () => {
     }, [navigate])
 
     return <>
-        <form onSubmit={handleSubmit(onSubmit)} style={{height: "inherit", margin: "30px 80px", paddingTop: "60px"}}>
+        <form onSubmit={handleSubmit(onSubmit)}
+              style={{height: "inherit", margin: "30px 80px", paddingTop: "60px"}}>
             <Controller name={"title"}
                         control={control}
                         rules={{required: true}}
@@ -228,7 +240,7 @@ const EditPostPage = () => {
                                        {...field}/>
                         )}/>
 
-            <Controller name={"content"}
+            <Controller name={"contents"}
                         control={control}
                         rules={{required: true}}
                         render={({field}) => (

@@ -12,11 +12,16 @@ export class FileService extends RestClient {
     ): TaskEither<ServiceError, FileReference> {
         const formData = new FormData()
 
-        formData.append("path", path)
+        const request = {
+            "path": path
+        }
+
+        // TODO: 다른 방법 고민 필요
+        formData.append("uploadRequest", new Blob([JSON.stringify(request)],{type:'application/json'}))
         formData.append("multipartFile", file)
 
         return pipe(
-            this.httpPut("post", "api/file/upload", formData, FileReference)
+            this.httpPost("file", "api/file/upload", formData, FileReference)
         )
     }
 }

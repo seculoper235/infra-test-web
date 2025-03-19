@@ -32,7 +32,7 @@ export class PostService extends RestClient {
         const param = {
             "title": post.title,
             "summary": summary,
-            "content": post.content,
+            "contents": post.contents,
             "images": files
         }
 
@@ -50,7 +50,7 @@ export class PostService extends RestClient {
             "id": post.id,
             "title": post.title,
             "summary": summary,
-            "content": post.content,
+            "contents": post.contents,
             "images": files
         }
 

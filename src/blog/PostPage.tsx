@@ -2,6 +2,8 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import {Box, Button, Skeleton, Stack, Typography} from "@mui/material"
 import dayjs from "dayjs"
 import {pipe} from "fp-ts/function"
+import * as O from "fp-ts/Option"
+import {UUID} from "io-ts-types"
 import {useCallback, useEffect, useRef, useState} from "react"
 import {useNavigate, useParams} from "react-router-dom"
 import {useHandleCallback} from "../common/Http.ts"
@@ -19,7 +21,7 @@ const PostPage = () => {
     const [post, setPost] = useState<Post>()
     const hasLoaded = useRef(false)
 
-    const onDelete = useCallback((id: number) => {
+    const onDelete = useCallback((id: UUID) => {
         setBusy(true)
 
         const request = pipe(
@@ -36,25 +38,24 @@ const PostPage = () => {
     const append = useCallback(() => {
         if (!params.id) return
 
+        const uuid = pipe(
+            UUID.decode(params.id),
+            O.fromEither,
+            O.toUndefined
+        )
+
+        if (!uuid) return
+
         setBusy(true)
 
         const request = pipe(
-            service.findById(Number(params.id)),
+            service.findById(uuid),
             handleResponse((res) => {
                 setPost(res)
             })
         )
 
         request().finally(() => setBusy(false))
-
-        const item = {
-            id: 1,
-            content: "<p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p>",
-            title: "오늘의 하루는 어땠나요...?",
-            created: new Date()
-        }
-
-        setPost(item)
     }, [handleResponse, params.id, service])
 
     useEffect(() => {
@@ -153,7 +154,7 @@ const PostPage = () => {
                           px: "10px",
                           textAlign: "right"
                       }}>
-                          {dayjs(post.created).format("YYYY년 MM월 DD일")}
+                          {dayjs(post.createdAt).format("YYYY년 MM월 DD일")}
                       </Typography>
                       <Box flexGrow={1}/>
                       <Typography sx={{
@@ -175,7 +176,7 @@ const PostPage = () => {
                               }}/>
                 ) : (
                     <Box component={"main"} textAlign={"left"} marginY={"45px"}
-                         dangerouslySetInnerHTML={{__html: post.content}}/>
+                         dangerouslySetInnerHTML={{__html: post.contents}}/>
                 )}
             </Stack>
           </Stack>

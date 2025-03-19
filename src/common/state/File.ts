@@ -1,13 +1,13 @@
 import {identity} from "fp-ts/function"
 import * as T from "io-ts"
-import {withMessage} from "io-ts-types"
-import {NonEmptyString} from "io-ts-types/NonEmptyString"
+import {UUID, withMessage} from "io-ts-types"
 import NoImage from "../../../public/asset/image/reference.jpg"
 
 export const FileReference = withMessage(
     T.readonly(T.type({
-            id: T.number,
-            name: NonEmptyString
+            id: UUID,
+            name: T.string,
+            path: T.string
         }, "FileReference")
     ),
     () => "올바르지 않은 파일 참조입니다.")
@@ -27,11 +27,23 @@ export function getImageUrl(file: FileReference | undefined) {
     if (!file) {
         return NoImage
     }
-    const {id, name} = file
+    const {path} = file
 
     const env = import.meta.env
 
     const prefix = env.VITE_S3_URL
 
-    return [prefix, id, name].join("/")
+    return [prefix, path].join("/")
+}
+
+export function getImagePath(path: string | undefined) {
+    if (!path) {
+        return NoImage
+    }
+
+    const env = import.meta.env
+
+    const prefix = env.VITE_S3_URL
+
+    return [prefix, path].join("/")
 }
