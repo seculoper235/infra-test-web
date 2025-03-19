@@ -1,14 +1,15 @@
+import ResizeModule from "@botom/quill-resize-module"
 import {Button, Stack, TextField, Typography} from "@mui/material"
 import {pipe} from "fp-ts/function"
 import * as O from "fp-ts/Option"
 import {none} from "fp-ts/Option"
 import * as A from "fp-ts/ReadonlyArray"
 import {UUID} from "io-ts-types"
-import * as Parchment from "parchment"
+import {DeltaStatic, Sources} from "quill"
 import Op from "quill-delta/src/Op.ts"
 import {CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Controller, useForm} from "react-hook-form"
-import ReactQuill, {DeltaStatic, EmitterSource} from "react-quill-new"
+import ReactQuill, {Quill} from "react-quill"
 import "react-quill-new/dist/quill.snow.css"
 import {useNavigate, useSearchParams} from "react-router-dom"
 import {useSetRecoilState} from "recoil"
@@ -20,13 +21,15 @@ import {usePostService} from "./service/PostService.ts"
 import {DefaultPost, Post} from "./state/Post.ts"
 import UnprivilegedEditor = ReactQuill.UnprivilegedEditor
 
+Quill.register("modules/resize", ResizeModule)
+
 interface ReactQuillEditorProps {
     style?: CSSProperties
     defaultValue?: string
     placeholder?: string
     value?: string
     handleImage: () => void
-    onChange: (value: string, delta: DeltaStatic, source: EmitterSource, editor: ReactQuill.UnprivilegedEditor) => void
+    onChange: (value: string, delta: DeltaStatic, source: Sources, editor: ReactQuill.UnprivilegedEditor) => void
 }
 
 const fonts = ["Pretendard", "GowunBatang"]
@@ -40,26 +43,62 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
          handleImage,
          onChange
      }: ReactQuillEditorProps, ref) => {
-        const Quill = ReactQuill.Quill
-        const FontAttributor = Quill.import("attributors/class/font") as { whitelist: string[] }
+        const InnerQuill = ReactQuill.Quill
+        const fontAttributor = InnerQuill.import("attributors/class/font") as {
+            whitelist: string[]
+        }
 
-        FontAttributor.whitelist = fonts
-        Quill.register(FontAttributor as Parchment.RegistryDefinition, true)
+        // TODO: 폰트 설정 추가
+        // TODO: 초기 로딩시 이미지 사이즈 지정 필요
+        // TODO: 달력 선택 후 다른 부분 클릭 시 창이 닫히지 않음
+        fontAttributor.whitelist = fonts
+        // Quill.register(fontAttributor as Parchment.RegistryDefinition, true)
+
+        const formats = [
+            "bold",
+            "italic",
+            "underline",
+            "strike",
+            "blockquote",
+            "align",
+            "height",
+            "width",
+            "font",
+            "header",
+            "image",
+            "video",
+            "clean",
+            "size",
+            "color",
+            "background"
+        ]
 
         const modules = useMemo(() => ({
+            resize: {
+                toolbar: {
+                    alignTools: false
+                }
+            },
             toolbar: {
                 container: [
-                    [{"font": fonts}],
-                    ["image", "video"],
-                    [{header: [1, 2, 3, 4, 5, false]}],
-                    ["link"],
-                    ["bold", "italic", "underline", "strike", "blockquote"],
-                    ["clean"]
+                    ["bold", "italic", "underline", "strike"],
+                    ["blockquote"],
+                    [{header: 1}, {header: 2}],
+                    [{list: "ordered"}, {list: "bullet"}],
+                    [{indent: "-1"}, {indent: "+1"}],
+                    [{size: ["small", false, "large", "huge"]}],
+                    [{header: [1, 2, 3, 4, 5, 6, false]}],
+
+                    [{color: []}, {background: []}],
+                    [{font: []}],
+                    [{align: []}],
+
+                    ["image", "video", "link"]
                 ],
                 handlers: {
                     image: handleImage
                 },
-                ImageResize: {
+                imageResize: {
                     modules: ["Resize", "DisplaySize"]
                 }
             }
@@ -68,6 +107,7 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
         return <>
             <ReactQuill ref={ref} style={style} modules={modules} value={value}
                         placeholder={placeholder}
+                        formats={formats}
                         defaultValue={defaultValue}
                         onChange={onChange}/>
         </>
@@ -161,7 +201,7 @@ const EditPostPage = () => {
                     setImages(images => [...images, res])
                     editor.insertEmbed(range.index, "image", getImageUrl(res))
                     editor.insertText(range.index + 1, "/n")
-                    editor.setSelection(range.index + 2)
+                    editor.setSelection(range.index + 2, 2)
                 })
             )()
         })
@@ -177,7 +217,7 @@ const EditPostPage = () => {
         const summary = editor.getText(0, 100)
 
         const files = pipe(
-            editor.getContents().ops,
+            editor.getContents().ops ?? A.empty,
             A.filterMap<Op, string>(a => {
                 return (a.insert !== undefined) && (typeof a.insert === "object") ? O.some(a.insert["image"] as string) : none
             })
@@ -185,12 +225,13 @@ const EditPostPage = () => {
 
         const uploads = pipe(
             images,
-            A.filter(image => files.includes(image.path)),
+            A.filter(image => files.includes(getImageUrl(image))),
             A.map(upload => upload.id)
         )
 
         console.log("포스트 저장할 내용: ", item)
         console.log("현재 파일 목록: ", files)
+        console.log("현재 파일 아이디: ", uploads)
 
         const request = pipe(
             !id ? postService.register(item, summary, uploads)
@@ -250,7 +291,7 @@ const EditPostPage = () => {
                                 value={field.value}
                                 handleImage={handleImage}
 
-                                onChange={(value: string, _delta: DeltaStatic, _source: EmitterSource, editor: UnprivilegedEditor) => onChange(
+                                onChange={(value: string, _delta: DeltaStatic, _source: Sources, editor: UnprivilegedEditor) => onChange(
                                     field.onChange, value, editor)
                                 }
                                 style={{

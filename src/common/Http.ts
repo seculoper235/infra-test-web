@@ -105,6 +105,7 @@ export abstract class RestClient {
         return TE.left
     }
 
+    // TODO: 저장 후 json -> Response로 파싱이 되지 않음. 다른 조회 함수에서는 문제X
     protected parseJson<T>(codec: Decoder<unknown, T>) {
         return flow(
             TE.chain<ServiceError, Response, unknown>(r => TE.rightTask(() => r.json())),
