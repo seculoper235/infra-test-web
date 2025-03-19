@@ -18,7 +18,7 @@ import {useFileService} from "../common/service/FileService.ts"
 import {FileData, FileReference, getImageUrl} from "../common/state/File.ts"
 import {globalLoadingState} from "../common/state/Loading.ts"
 import {usePostService} from "./service/PostService.ts"
-import {DefaultPost, Post} from "./state/Post.ts"
+import {DefaultPost, Post, PostText} from "./state/Post.ts"
 import UnprivilegedEditor = ReactQuill.UnprivilegedEditor
 
 Quill.register("modules/resize", ResizeModule)
@@ -119,7 +119,7 @@ const EditPostPage = () => {
     const quillRef = useRef<ReactQuill | null>(null)
 
     const setBusy = useSetRecoilState(globalLoadingState)
-    const [post, setPost] = useState<Post>()
+    const [text, setText] = useState<PostText>()
     const [images, setImages] = useState<ReadonlyArray<FileReference>>(A.empty)
     const id = useMemo(() => searchParams.get("id"), [searchParams])
     const hasLoaded = useRef(false)
@@ -134,8 +134,8 @@ const EditPostPage = () => {
         formState: {errors}
     } = useForm<Post>({
         mode: "all",
-        defaultValues: post ?? DefaultPost,
-        values: post
+        defaultValues: (text || {images: images}) ?? DefaultPost,
+        values: text ? (text || {images: images}) as Post : undefined
     })
 
     const isValid = useMemo(() =>
@@ -144,6 +144,7 @@ const EditPostPage = () => {
 
     // 초기 로딩 시
     const append = useCallback(() => {
+
         const uuid = pipe(
             O.fromNullable(id),
             O.map(i => pipe(
@@ -161,7 +162,13 @@ const EditPostPage = () => {
         const request = pipe(
             postService.findById(uuid),
             handleResponse<Post>((res) => {
-                setPost(res)
+                setText({
+                    id: res.id,
+                    title: res.title,
+                    contents: res.contents,
+                    createdAt: res.createdAt
+                })
+                setImages(res.images)
             })
         )
 
@@ -171,12 +178,12 @@ const EditPostPage = () => {
     useEffect(() => {
         if (!hasLoaded.current) {
             append()
-            console.log("Post: ", post)
+            console.log("Post: ", text)
             hasLoaded.current = true
         } else {
             hasLoaded.current = false
         }
-    }, [append, post])
+    }, [append, text])
 
     // 이미지 업로드
     const handleImage = useCallback(() => {
@@ -238,7 +245,7 @@ const EditPostPage = () => {
                 : postService.update(item, summary, uploads),
             handleResponse((res) => {
                 console.log("포스트 저장되었습니다: ", res)
-                navigate("post/" + res.id)
+                navigate("/post/" + res.id)
             })
         )
 
