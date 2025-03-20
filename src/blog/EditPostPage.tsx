@@ -20,8 +20,6 @@ import {usePostService} from "./service/PostService.ts"
 import {DefaultPost, Post, PostText} from "./state/Post.ts"
 import UnprivilegedEditor = ReactQuill.UnprivilegedEditor
 
-Quill.register("modules/resize", ResizeModule)
-
 interface ReactQuillEditorProps {
     style?: CSSProperties
     defaultValue?: string
@@ -31,7 +29,7 @@ interface ReactQuillEditorProps {
     onChange: (value: string, delta: DeltaStatic, source: Sources, editor: ReactQuill.UnprivilegedEditor) => void
 }
 
-const fonts = ["Pretendard", "GowunBatang"]
+const FONT_LIST = ["SansSerif", "Pretendard", "GowunBatang"]
 
 const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
     ({
@@ -42,16 +40,13 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
          handleImage,
          onChange
      }: ReactQuillEditorProps, ref) => {
-        const InnerQuill = ReactQuill.Quill
-        const fontAttributor = InnerQuill.import("attributors/class/font") as {
+        const fontAttributor = Quill.import("attributors/class/font") as {
             whitelist: string[]
         }
+        fontAttributor.whitelist = FONT_LIST
 
-        // TODO: 폰트 설정 추가
-        // TODO: 초기 로딩시 이미지 사이즈 지정 필요
-        // TODO: 달력 선택 후 다른 부분 클릭 시 창이 닫히지 않음
-        fontAttributor.whitelist = fonts
-        // Quill.register(fontAttributor as Parchment.RegistryDefinition, true)
+        Quill.register(fontAttributor, true)
+        Quill.register("modules/resize", ResizeModule)
 
         const formats = [
             "bold",
@@ -80,19 +75,22 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
             },
             toolbar: {
                 container: [
+                    [
+                        {font: FONT_LIST},
+                        {header: [1, 2, 3, false]},
+                        {size: ["small", false, "large", "huge"]}
+                    ],
+
                     ["bold", "italic", "underline", "strike"],
                     ["blockquote"],
-                    [{header: 1}, {header: 2}],
+
+                    ["image", "video", "link"],
+
                     [{list: "ordered"}, {list: "bullet"}],
                     [{indent: "-1"}, {indent: "+1"}],
-                    [{size: ["small", false, "large", "huge"]}],
-                    [{header: [1, 2, 3, 4, 5, 6, false]}],
-
-                    [{color: []}, {background: []}],
-                    [{font: []}],
                     [{align: []}],
 
-                    ["image", "video", "link"]
+                    [{color: []}, {background: []}]
                 ],
                 handlers: {
                     image: handleImage
