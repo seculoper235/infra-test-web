@@ -5,12 +5,11 @@ import * as O from "fp-ts/Option"
 import {none} from "fp-ts/Option"
 import * as A from "fp-ts/ReadonlyArray"
 import {UUID} from "io-ts-types"
-import {DeltaStatic, Sources} from "quill"
-import Op from "quill-delta/src/Op.ts"
+import {DeltaOperation, DeltaStatic, Sources} from "quill"
 import {CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Controller, useForm} from "react-hook-form"
 import ReactQuill, {Quill} from "react-quill"
-import "react-quill-new/dist/quill.snow.css"
+import "react-quill/dist/quill.snow.css"
 import {useNavigate, useSearchParams} from "react-router-dom"
 import {useSetRecoilState} from "recoil"
 import {useHandleCallback} from "../common/Http.ts"
@@ -105,7 +104,7 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
         }), [handleImage])
 
         return <>
-            <ReactQuill ref={ref} style={style} modules={modules} value={value}
+            <ReactQuill theme={"snow"} ref={ref} style={style} modules={modules} value={value}
                         placeholder={placeholder}
                         formats={formats}
                         defaultValue={defaultValue}
@@ -225,7 +224,7 @@ const EditPostPage = () => {
 
         const files = pipe(
             editor.getContents().ops ?? A.empty,
-            A.filterMap<Op, string>(a => {
+            A.filterMap<DeltaOperation, string>(a => {
                 return (a.insert !== undefined) && (typeof a.insert === "object") ? O.some(a.insert["image"] as string) : none
             })
         )
