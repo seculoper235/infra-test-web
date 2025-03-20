@@ -118,7 +118,6 @@ const PostSpace = () => {
                         </Typography>
 
                         <DateCalendar disableFuture
-                                      maxDate={dayjs()}
                                       value={date}
                                       onChange={(value) => handleCalendar(value)}
                                       sx={{
