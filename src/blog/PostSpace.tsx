@@ -37,6 +37,7 @@ const PostSpace = () => {
     const handleResponse = useHandleCallback()
 
     const [busy, setBusy] = useState(false)
+    const [open, setOpen] = useState(false)
     const [date, setDate] = useState(dayjs())
     const [items, setItems] = useState<ReadonlyArray<PostInfo>>(A.empty)
 
@@ -59,8 +60,6 @@ const PostSpace = () => {
     useLayoutEffect(() => {
         appendItems(date)
     }, [appendItems, date])
-
-    const [open, setOpen] = useState(false)
 
     const handleCalendar = useCallback((value: Dayjs) => {
         console.log("선택일자: ", value.format("YYYY/MM/DD"))
@@ -119,6 +118,7 @@ const PostSpace = () => {
                         </Typography>
 
                         <DateCalendar disableFuture
+                                      maxDate={dayjs()}
                                       value={date}
                                       onChange={(value) => handleCalendar(value)}
                                       sx={{
@@ -135,6 +135,7 @@ const PostSpace = () => {
                     </Stack>
                     <IconButton
                         size={"small"}
+                        disabled={date.isSame(dayjs(), "day")}
                         onClick={() => setDate(date.add(1, "d"))}
                         sx={{borderRadius: "16px"}}>
                         <ArrowForwardIosRounded/>
