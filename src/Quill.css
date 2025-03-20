@@ -1,0 +1,41 @@
+.ql-container.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid #ccc !important;
+}
+
+.ql-toolbar.ql-snow {
+    border: none !important;
+    border-top: 1px solid #ccc !important;
+    border-bottom: 1px solid #ccc !important;
+}
+
+/* Quill 에디터 Default 폰트 설정 */
+.ql-container {
+    font-family: 'SansSerif', serif !important;
+}
+.ql-picker.ql-font .ql-picker-label .ql-picker-label.ql-active::before {
+    font-family: 'SansSerif', serif;
+    content: "Sans Serif" !important;
+}
+
+/* 고운바탕 폰트 추가 */
+.ql-font-GowunBatang {
+    font-family: 'GowunBatang-Regular', serif;
+}
+
+:where(:has(.ql-active)) .ql-picker.ql-font .ql-picker-label[data-value="GowunBatang"]::before,
+.ql-picker.ql-font .ql-picker-item[data-value="GowunBatang"]::before {
+    font-family: 'GowunBatang-Regular', serif;
+    content: "고운바탕" !important;
+}
+
+/* Pretendard 폰트 추가 */
+.ql-font-Pretendard {
+    font-family: 'Pretendard-Regular', serif;
+}
+
+:where(:has(.ql-active)) .ql-picker.ql-font .ql-picker-label[data-value="Pretendard"]::before,
+.ql-picker.ql-font .ql-picker-item[data-value="Pretendard"]::before {
+    font-family: 'Pretendard-Regular', serif;
+    content: "Pretendard" !important;
+}
