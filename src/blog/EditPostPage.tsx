@@ -1,22 +1,26 @@
+import ResizeModule from "@botom/quill-resize-module"
 import {Button, Stack, TextField, Typography} from "@mui/material"
 import {pipe} from "fp-ts/function"
 import * as O from "fp-ts/Option"
 import {none} from "fp-ts/Option"
 import * as A from "fp-ts/ReadonlyArray"
-import * as Parchment from "parchment"
-import Op from "quill-delta/src/Op.ts"
+import {UUID} from "io-ts-types"
+import {DeltaOperation, DeltaStatic, Sources} from "quill"
 import {CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {Controller, useForm} from "react-hook-form"
-import ReactQuill, {DeltaStatic, EmitterSource} from "react-quill-new"
-import "react-quill-new/dist/quill.snow.css"
+import ReactQuill, {Quill} from "react-quill"
+import "react-quill/dist/quill.snow.css"
 import {useNavigate, useSearchParams} from "react-router-dom"
 import {useSetRecoilState} from "recoil"
 import {useHandleCallback} from "../common/Http.ts"
-import {getImageUrl} from "../common/state/File.ts"
+import {useFileService} from "../common/service/FileService.ts"
+import {FileData, FileReference, getImageUrl} from "../common/state/File.ts"
 import {globalLoadingState} from "../common/state/Loading.ts"
 import {usePostService} from "./service/PostService.ts"
-import {DefaultPost, Post} from "./state/Post.ts"
+import {DefaultPost, Post, PostText} from "./state/Post.ts"
 import UnprivilegedEditor = ReactQuill.UnprivilegedEditor
+
+Quill.register("modules/resize", ResizeModule)
 
 interface ReactQuillEditorProps {
     style?: CSSProperties
@@ -24,7 +28,7 @@ interface ReactQuillEditorProps {
     placeholder?: string
     value?: string
     handleImage: () => void
-    onChange: (value: string, delta: DeltaStatic, source: EmitterSource, editor: ReactQuill.UnprivilegedEditor) => void
+    onChange: (value: string, delta: DeltaStatic, source: Sources, editor: ReactQuill.UnprivilegedEditor) => void
 }
 
 const fonts = ["Pretendard", "GowunBatang"]
@@ -38,34 +42,71 @@ const ReactQuillEditor = forwardRef<ReactQuill, ReactQuillEditorProps>(
          handleImage,
          onChange
      }: ReactQuillEditorProps, ref) => {
-        const Quill = ReactQuill.Quill
-        const FontAttributor = Quill.import("attributors/class/font") as { whitelist: string[] }
+        const InnerQuill = ReactQuill.Quill
+        const fontAttributor = InnerQuill.import("attributors/class/font") as {
+            whitelist: string[]
+        }
 
-        FontAttributor.whitelist = fonts
-        Quill.register(FontAttributor as Parchment.RegistryDefinition, true)
+        // TODO: 폰트 설정 추가
+        // TODO: 초기 로딩시 이미지 사이즈 지정 필요
+        // TODO: 달력 선택 후 다른 부분 클릭 시 창이 닫히지 않음
+        fontAttributor.whitelist = fonts
+        // Quill.register(fontAttributor as Parchment.RegistryDefinition, true)
+
+        const formats = [
+            "bold",
+            "italic",
+            "underline",
+            "strike",
+            "blockquote",
+            "align",
+            "height",
+            "width",
+            "font",
+            "header",
+            "image",
+            "video",
+            "clean",
+            "size",
+            "color",
+            "background"
+        ]
 
         const modules = useMemo(() => ({
+            resize: {
+                toolbar: {
+                    alignTools: false
+                }
+            },
             toolbar: {
                 container: [
-                    [{"font": fonts}],
-                    ["image", "video"],
-                    [{header: [1, 2, 3, 4, 5, false]}],
-                    ["link"],
-                    ["bold", "italic", "underline", "strike", "blockquote"],
-                    ["clean"]
+                    ["bold", "italic", "underline", "strike"],
+                    ["blockquote"],
+                    [{header: 1}, {header: 2}],
+                    [{list: "ordered"}, {list: "bullet"}],
+                    [{indent: "-1"}, {indent: "+1"}],
+                    [{size: ["small", false, "large", "huge"]}],
+                    [{header: [1, 2, 3, 4, 5, 6, false]}],
+
+                    [{color: []}, {background: []}],
+                    [{font: []}],
+                    [{align: []}],
+
+                    ["image", "video", "link"]
                 ],
                 handlers: {
                     image: handleImage
                 },
-                ImageResize: {
-                    modules: ["Resize"]
+                imageResize: {
+                    modules: ["Resize", "DisplaySize"]
                 }
             }
         }), [handleImage])
 
         return <>
-            <ReactQuill ref={ref} style={style} modules={modules} value={value}
+            <ReactQuill theme={"snow"} ref={ref} style={style} modules={modules} value={value}
                         placeholder={placeholder}
+                        formats={formats}
                         defaultValue={defaultValue}
                         onChange={onChange}/>
         </>
@@ -77,10 +118,13 @@ const EditPostPage = () => {
     const quillRef = useRef<ReactQuill | null>(null)
 
     const setBusy = useSetRecoilState(globalLoadingState)
-    const [post, setPost] = useState<Post>()
+    const [text, setText] = useState<PostText>()
+    const [images, setImages] = useState<ReadonlyArray<FileReference>>(A.empty)
+    const id = useMemo(() => searchParams.get("id"), [searchParams])
     const hasLoaded = useRef(false)
 
-    const service = usePostService()
+    const postService = usePostService()
+    const fileService = useFileService()
     const handleResponse = useHandleCallback()
 
     const {
@@ -89,50 +133,56 @@ const EditPostPage = () => {
         formState: {errors}
     } = useForm<Post>({
         mode: "all",
-        defaultValues: post ?? DefaultPost,
-        values: post
+        defaultValues: (text || {images: images}) ?? DefaultPost,
+        values: text ? (text || {images: images}) as Post : undefined
     })
 
     const isValid = useMemo(() =>
-            !errors.title && !errors.content
-        , [errors.title, errors.content])
+            !errors.title && !errors.contents
+        , [errors.title, errors.contents])
 
     // 초기 로딩 시
     const append = useCallback(() => {
-        const id = searchParams.get("id")
 
-        if (!id) return
+        const uuid = pipe(
+            O.fromNullable(id),
+            O.map(i => pipe(
+                UUID.decode(i),
+                O.fromEither,
+                O.toUndefined
+            )),
+            O.toUndefined
+        )
+
+        if (!uuid) return
 
         setBusy(true)
 
         const request = pipe(
-            service.findById(Number(id)),
+            postService.findById(uuid),
             handleResponse<Post>((res) => {
-                setPost(res)
+                setText({
+                    id: res.id,
+                    title: res.title,
+                    contents: res.contents,
+                    createdAt: res.createdAt
+                })
+                setImages(res.images)
             })
         )
 
         request().finally(() => setBusy(false))
-
-        const item = {
-            id: 1,
-            content: "<p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p><p><br></p><p><strong style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\">Lorem Ipsum</strong><span style=\"background-color: rgb(255, 255, 255); color: rgba(0, 0, 0, 0.87);\"> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</span></p>",
-            title: "오늘의 하루는 어땠나요...?",
-            created: new Date()
-        }
-
-        setPost(item)
-    }, [handleResponse, searchParams, service, setBusy])
+    }, [id, setBusy, postService, handleResponse])
 
     useEffect(() => {
         if (!hasLoaded.current) {
             append()
-            console.log("Post: ", post)
+            console.log("Post: ", text)
             hasLoaded.current = true
         } else {
             hasLoaded.current = false
         }
-    }, [append, post])
+    }, [append, text])
 
     // 이미지 업로드
     const handleImage = useCallback(() => {
@@ -150,20 +200,18 @@ const EditPostPage = () => {
             const range = editor.getSelection(true)
 
             pipe(
-                service.upload(file),
+                fileService.upload("post/image", file as FileData),
                 handleResponse((res) => {
-                    console.log("이미지 업로드 완료: ", getImageUrl(res))
-                    editor.insertEmbed(range.index, "image", defaultUrl)
-                    editor.setSelection(range.index + 1)
+                    console.log("이미지 업로드 완료: ", res.id)
+
+                    setImages(images => [...images, res])
+                    editor.insertEmbed(range.index, "image", getImageUrl(res))
+                    editor.insertText(range.index + 1, "/n")
+                    editor.setSelection(range.index + 2, 2)
                 })
             )()
-
-            const defaultUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1c9zAnn02wcDmYlMABoRgWoxn4wccXzUpUg&s"
-            editor.insertEmbed(range.index, "image", defaultUrl)
-            editor.insertText(range.index + 1, "/n")
-            editor.setSelection(range.index + 2)
         })
-    }, [handleResponse, service])
+    }, [handleResponse, fileService])
 
     const onSubmit = useCallback((item: Post) => {
         if (!quillRef.current) return
@@ -172,26 +220,36 @@ const EditPostPage = () => {
 
         const editor = quillRef.current.getEditor()
 
-        console.log("포스트 저장되었습니다: ", item)
+        const summary = editor.getText(0, 100)
+
         const files = pipe(
-            editor.getContents().ops,
-            A.filterMap<Op, string>(a => {
+            editor.getContents().ops ?? A.empty,
+            A.filterMap<DeltaOperation, string>(a => {
                 return (a.insert !== undefined) && (typeof a.insert === "object") ? O.some(a.insert["image"] as string) : none
             })
         )
 
+        const uploads = pipe(
+            images,
+            A.filter(image => files.includes(getImageUrl(image))),
+            A.map(upload => upload.id)
+        )
+
+        console.log("포스트 저장할 내용: ", item)
         console.log("현재 파일 목록: ", files)
+        console.log("현재 파일 아이디: ", uploads)
 
         const request = pipe(
-            service.register(item, files),
+            !id ? postService.register(item, summary, uploads)
+                : postService.update(item, summary, uploads),
             handleResponse((res) => {
                 console.log("포스트 저장되었습니다: ", res)
-                navigate("post/" + res.id)
+                navigate("/post/" + res.id)
             })
         )
 
         request().finally(() => setBusy(false))
-    }, [handleResponse, navigate, service, setBusy])
+    }, [handleResponse, id, images, navigate, postService, setBusy])
 
     const onChange = useCallback((onChange: (input: string) => void, value: string, editor: UnprivilegedEditor) => {
         console.log(editor.getText())
@@ -205,7 +263,8 @@ const EditPostPage = () => {
     }, [navigate])
 
     return <>
-        <form onSubmit={handleSubmit(onSubmit)} style={{height: "inherit", margin: "30px 80px", paddingTop: "60px"}}>
+        <form onSubmit={handleSubmit(onSubmit)}
+              style={{height: "inherit", margin: "30px 80px", paddingTop: "60px"}}>
             <Controller name={"title"}
                         control={control}
                         rules={{required: true}}
@@ -228,7 +287,7 @@ const EditPostPage = () => {
                                        {...field}/>
                         )}/>
 
-            <Controller name={"content"}
+            <Controller name={"contents"}
                         control={control}
                         rules={{required: true}}
                         render={({field}) => (
@@ -238,7 +297,7 @@ const EditPostPage = () => {
                                 value={field.value}
                                 handleImage={handleImage}
 
-                                onChange={(value: string, _delta: DeltaStatic, _source: EmitterSource, editor: UnprivilegedEditor) => onChange(
+                                onChange={(value: string, _delta: DeltaStatic, _source: Sources, editor: UnprivilegedEditor) => onChange(
                                     field.onChange, value, editor)
                                 }
                                 style={{

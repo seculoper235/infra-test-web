@@ -22,10 +22,16 @@ export type HttpError = T.TypeOf<typeof HttpError>
 
 export type ServiceError = HttpError | Error
 
-export function getEndPoint() {
+export function getEndPoint(service: string) {
     const env = import.meta.env
 
-    return env.VITE_API_HOST
+    if (service == "file") {
+        return env.VITE_FILE_API_HOST
+    } else if (service == "post") {
+        return env.VITE_POST_API_HOST
+    } else {
+        return env.VITE_TODO_API_HOST
+    }
 }
 
 const handleResponse: (te: TaskEither<ServiceError, Response>) => TaskEither<ServiceError, Response> = flow(
@@ -49,8 +55,8 @@ export abstract class RestClient {
         return {}
     }
 
-    protected getEndpoint(uri: string, params: Record<string, unknown> = {}): string {
-        const prefix = getEndPoint()
+    protected getEndpoint(service: string, uri: string, params: Record<string, unknown> = {}): string {
+        const prefix = getEndPoint(service)
 
         return pipe(
             params,
@@ -99,6 +105,7 @@ export abstract class RestClient {
         return TE.left
     }
 
+    // TODO: 저장 후 json -> Response로 파싱이 되지 않음. 다른 조회 함수에서는 문제X
     protected parseJson<T>(codec: Decoder<unknown, T>) {
         return flow(
             TE.chain<ServiceError, Response, unknown>(r => TE.rightTask(() => r.json())),
@@ -115,11 +122,12 @@ export abstract class RestClient {
     }
 
     protected httpGet<T>(
+        service: string,
         url: string,
         codec: Decoder<unknown, T>,
         params: Record<string, unknown> = {}): TaskEither<ServiceError, T> {
 
-        const endpoint = this.getEndpoint(url, params)
+        const endpoint = this.getEndpoint(service, url, params)
 
         return this.createRequest(() => pipe(
             this.doFetch(endpoint, {
@@ -131,27 +139,29 @@ export abstract class RestClient {
     }
 
     protected httpPost<T>(
+        service: string,
         url: string,
         body: BodyInit,
         codec: Decoder<unknown, T>): TaskEither<ServiceError, T> {
 
-        return pipe(this.handleUpdateRequest(url, "POST", body), this.parseJson(codec))
+        return pipe(this.handleUpdateRequest(service, url, "POST", body), this.parseJson(codec))
     }
 
-    protected httpPostNoReturn(url: string, body: BodyInit): TaskEither<ServiceError, void> {
-        return pipe(this.handleUpdateRequest(url, "POST", body), TE.map(constVoid))
+    protected httpPostNoReturn(service: string, url: string, body: BodyInit): TaskEither<ServiceError, void> {
+        return pipe(this.handleUpdateRequest(service, url, "POST", body), TE.map(constVoid))
     }
 
     protected httpPut<T>(
+        service: string,
         url: string,
         body: BodyInit,
         codec: Decoder<unknown, T>): TaskEither<ServiceError, T> {
 
-        return pipe(this.handleUpdateRequest(url, "PUT", body), this.parseJson(codec))
+        return pipe(this.handleUpdateRequest(service, url, "PUT", body), this.parseJson(codec))
     }
 
-    protected httpDelete(url: string): TaskEither<ServiceError, void> {
-        const endpoint = this.getEndpoint(url)
+    protected httpDelete(service: string, url: string): TaskEither<ServiceError, void> {
+        const endpoint = this.getEndpoint(service, url)
 
         return this.createRequest(() => pipe(
             this.doFetch(endpoint, {method: "DELETE", headers: this.headers}),
@@ -160,12 +170,13 @@ export abstract class RestClient {
     }
 
     private handleUpdateRequest(
+        service: string,
         url: string,
         method: "POST" | "PUT" | "PATCH",
         body: BodyInit
     ): TaskEither<ServiceError, Response> {
 
-        const endpoint = this.getEndpoint(url)
+        const endpoint = this.getEndpoint(service, url)
 
         return this.createRequest(() => {
             let headers: HeadersInit
