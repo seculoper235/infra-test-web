@@ -204,7 +204,9 @@ const EditPostPage = () => {
 
                     setImages(images => [...images, res])
                     editor.insertEmbed(range.index, "image", getImageUrl(res))
-                    editor.insertText(range.index + 1, "/n")
+                    editor.formatText(0, 1, "width", "100%")
+                    editor.formatText(0, 1, "height", "100%")
+                    editor.insertText(range.index + 2, "\n")
                     editor.setSelection(range.index + 2, 2)
                 })
             )()
@@ -262,7 +264,13 @@ const EditPostPage = () => {
 
     return <>
         <form onSubmit={handleSubmit(onSubmit)}
-              style={{height: "inherit", margin: "30px 80px", paddingTop: "60px"}}>
+              style={{
+                  boxSizing: "border-box",
+                  height: "100%",
+                  margin: "0px 80px",
+                  paddingTop: "60px"
+              }}
+        >
             <Controller name={"title"}
                         control={control}
                         rules={{required: true}}

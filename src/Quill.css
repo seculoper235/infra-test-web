@@ -1,4 +1,9 @@
+.quill {
+    overflow-y: unset;
+}
+
 .ql-container.ql-snow {
+    overflow-y: scroll;
     border: none !important;
     border-bottom: 1px solid #ccc !important;
 }
