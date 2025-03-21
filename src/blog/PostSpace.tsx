@@ -20,7 +20,7 @@ import dayjs from "dayjs"
 import {pipe} from "fp-ts/function"
 import * as O from "fp-ts/Option"
 import * as A from "fp-ts/ReadonlyArray"
-import {Fragment, useCallback, useLayoutEffect, useState} from "react"
+import {Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState} from "react"
 import {useNavigate} from "react-router-dom"
 import TitleBar from "../common/compoent/TitleBar.tsx"
 import {useHandleCallback} from "../common/Http.ts"
@@ -36,7 +36,10 @@ const PostSpace = () => {
     const service = usePostService()
     const handleResponse = useHandleCallback()
 
+    const dateRef = useRef<HTMLDivElement>(null)
+    const iconRef = useRef<HTMLButtonElement>(null)
     const [busy, setBusy] = useState(false)
+    const [open, setOpen] = useState(false)
     const [date, setDate] = useState(dayjs())
     const [items, setItems] = useState<ReadonlyArray<PostInfo>>(A.empty)
 
@@ -60,14 +63,31 @@ const PostSpace = () => {
         appendItems(date)
     }, [appendItems, date])
 
-    const [open, setOpen] = useState(false)
-
     const handleCalendar = useCallback((value: Dayjs) => {
         console.log("선택일자: ", value.format("YYYY/MM/DD"))
 
         setDate(value)
         setOpen(false)
     }, [])
+
+    useEffect(() => {
+        const handleOutsideClose = (e: Event) => {
+            // 클릭한 요소가 React.Node 이고
+            if (!(e.target instanceof Node)) return
+
+            // 달력 아이콘 버튼을 클릭한게 아닌 경우만 해당
+            if (iconRef.current && iconRef.current.contains(e.target)) return
+
+            const isOutside = dateRef.current &&
+                !dateRef.current.contains(e.target)
+
+            if (open && isOutside) setOpen(false)
+        }
+
+        document.addEventListener("click", handleOutsideClose)
+
+        return () => document.removeEventListener("click", handleOutsideClose)
+    }, [open])
 
     return <>
         <TitleBar title={"기록하는 공간"}/>
@@ -106,6 +126,7 @@ const PostSpace = () => {
                             <PickersToolbar toolbarTitle={"Select Date 🍀"} isLandscape={true}
                                             landscapeDirection={"column"}/>
                             <IconButton
+                                ref={iconRef}
                                 size={"large"}
                                 onClick={() => setOpen(!open)}
                                 sx={{borderRadius: "16px"}}>
@@ -119,6 +140,7 @@ const PostSpace = () => {
                         </Typography>
 
                         <DateCalendar disableFuture
+                                      ref={dateRef}
                                       value={date}
                                       onChange={(value) => handleCalendar(value)}
                                       sx={{
@@ -135,6 +157,7 @@ const PostSpace = () => {
                     </Stack>
                     <IconButton
                         size={"small"}
+                        disabled={date.isSame(dayjs(), "day")}
                         onClick={() => setDate(date.add(1, "d"))}
                         sx={{borderRadius: "16px"}}>
                         <ArrowForwardIosRounded/>

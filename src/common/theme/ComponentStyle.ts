@@ -19,6 +19,15 @@ export const ComponentStyle: Components = {
             disableElevation: true
         }
     },
+    MuiIconButton: {
+        styleOverrides: {
+            root: {
+                ":focus": {
+                    outline: "unset"
+                }
+            }
+        }
+    },
     MuiCard: {
         styleOverrides: {
             root: {
